@@ -1,5 +1,12 @@
 #/bin/bash
 
+###################
+#simple script to compare if the timestamp of a previously held file 
+#has been changed. You can insert your operation in this script and get
+#a list of only those files that were previously present and modified
+# due to the operation.
+###################
+
 files=$(ls -l | awk '{print $6"/"$7"/"$8"$"$9}')
 for f in $(echo $files)
 do
@@ -12,6 +19,10 @@ done
 #for testing purposes
 touch testfile.txt
 mv testfile.txt testfile1.txt
+
+######################
+#!PERFORM OPERATION HERE!
+######################
 
 files=$(ls -l | awk '{print $6"/"$7"/"$8"$"$9}')
 for f in $(echo $files)
