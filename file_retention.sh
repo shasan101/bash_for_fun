@@ -18,20 +18,31 @@
 #     }
 # }
 
+#to find the oldest file in a dir
+#find . -type f -print0  | xargs -0 ls "${daily_path}" | head -n 1
+
 daily_retention_count="7"
 weekly_retention_count="4"
 monthly_retention_count="12"
 yearly_retention_count="1"
 
-dump_path="/var/backups/postgres_dumps/"
+#dump_path="/var/backups/postgres_dumps/"
+dump_path="/home/postgres_user/backups/"
 daily_path="${dump_path}daily/"
 weekly_path="${dump_path}weekly/"
 monthly_path="${dump_path}monthly/"
 yearly_path="${dump_path}yearly/"
 
+mkdir -p $daily_path 
+mkdir -p $weekly_path 
+mkdir -p $monthly_path 
+mkdir -p $yearly_path  
+
 daily_files=$(ls ${daily_path} -c)
 count_of_daily=$(ls -1q  ${daily_path} | wc -l)
-echo $files
+# echo $files
+
+
 if [[ "${count_of_daily}" -ge ${daily_retention_count} ]]
 then
     weekly_files=$(ls ${weekly_path} -c)
@@ -47,18 +58,59 @@ then
             if [[ "${count_of_yearly}" -ge ${yearly_retention_count} ]]
             then
                 rm -f "${yearly_path}${yearly_files}"
-            else
-                mv "${monthly_path}${monthly_files}"[${count_of_monthly}-1] ${yearly_path}
-                mv "${weekly_path}${weekly_files}"[${count_of_weekly}-1] ${monthly_path}
-                mv "${daily_path}${daily_files}"[${count_of_daily}-1] ${weekly_path}
             fi
+                
+            mv `find . -type f -print0  | xargs -0 ls "${monthly_path}" | head -n 1` ${yearly_path}
+            mv `find . -type f -print0  | xargs -0 ls "${weekly_path}" | head -n 1` ${monthly_path}
+            mv `find . -type f -print0  | xargs -0 ls "${daily_path}" | head -n 1` ${weekly_path}
+            
         else
-            mv "${weekly_path}${weekly_files}"[${count_of_weekly}-1] ${monthly_path}
-            mv "${daily_path}${daily_files}"[${count_of_daily}-1] ${weekly_path}
+            mv `find . -type f -print0  | xargs -0 ls "${weekly_path}" | head -n 1` ${monthly_path}
+            mv `find . -type f -print0  | xargs -0 ls "${daily_path}" | head -n 1` ${weekly_path}
         fi
     else
-        mv "${daily_path}${daily_files}"[${count_of_daily}-1] ${weekly_path}
+        mv `find . -type f -print0  | xargs -0 ls "${daily_path}" | head -n 1` ${weekly_path}
     fi
 fi
 
 #take a dump and place it in the daily backup folder
+
+HOSTNAME=127.0.0.1
+DATABASE=test1
+PORT=5432
+
+# Note that we are setting the password to a global environment variable temporarily.
+echo "Pulling Database: This may take a few minutes"
+#export PGPASSWORD="$PASSWORD"
+filename="$(date +%Y-%m-%d-%s).bakup"
+pg_dump -Fc -Z9 -w -h $HOSTNAME -d $DATABASE -p ${PORT} > ${daily_path}${filename}
+#unset PGPASSWORD
+gzip ${daily_path}${filename}
+echo "Pull Complete"
+
+cd /home/postgres_user/backups;for d in `ls /home/postgres_user/backups`; do echo $d;ls -lah $d; done
+
+# #ping machines
+# for connection_string in ${machines}:
+#     ping -c 1 ${connection_string}
+#     if [[ "$?" -eq "0" ]] 
+#     then
+#         scp ${filename} ${copy_user}@${connection_string}:${user_path}/${filename}
+#     fi
+# done
+
+
+
+
+
+
+HOSTNAME=127.0.0.1
+DATABASE=test1
+PORT=5432
+
+# Note that we are setting the password to a global environment variable temporarily.
+echo "Pulling Database: This may take a few minutes"
+#export PGPASSWORD="$PASSWORD"
+filename="$(date +%Y-%m-%d).bakup"
+pg_dump -Fc -Z9 -w -h $HOSTNAME -d $DATABASE -p ${PORT} > ${filename}
+gzip ${filename}
