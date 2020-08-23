@@ -5,7 +5,6 @@ monthly_retention_count="12"
 yearly_retention_count="1"
 
 
-#dump_path="/var/backups/postgres_dumps/"
 dump_path="/home/test/backups/"
 daily_path="${dump_path}daily/"
 weekly_path="${dump_path}weekly/"
@@ -63,13 +62,18 @@ fi
 # for d in `ls /home/test/backups`; do echo $d;ls -lah "/home/test/backups/"$d; done
 
 # #ping machines
-# for connection_string in ${machines}:
-#     ping -c 1 ${connection_string}
-#     if [[ "$?" -eq "0" ]] 
-#     then
-#         scp ${filename} ${copy_user}@${connection_string}:${user_path}/${filename}
-#     fi
-# done
+copy_user="postgres_user"
+user_path="/home/"${copy_user}
+machines=("172.16.1.10" "172.16.1.11" "172.16.1.12")
+for connection_string in ${machines}:
+do
+     ping -c 1 ${connection_string}
+     echo ${connection_string}
+     if [[ "$?" -eq "0" ]] 
+     then
+         scp ${daily_path}${filename} ${copy_user}@${connection_string}:${user_path}/${filename}
+     fi
+done
 
 
 #  rm -r backups/daily/*
